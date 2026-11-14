@@ -1,3 +1,52 @@
+function showDateUpdate(dateUpdate, publicationDate, publicationDateError, statusDiv) {
+    const actionDiv = document.getElementById("date-action");
+    actionDiv.replaceChildren();
+
+    const dateStatus = document.createElement("p");
+    dateStatus.textContent = publicationDate
+        ? `Page publication date detected: ${publicationDate}.`
+        : publicationDateError
+            ? `Could not read the page publication date: ${publicationDateError}`
+            : "No page publication date was detected.";
+    actionDiv.appendChild(dateStatus);
+
+    if (!dateUpdate) {
+        if (publicationDate) {
+            const noUpdate = document.createElement("p");
+            noUpdate.textContent = "No date update was generated for this bookmark title.";
+            actionDiv.appendChild(noUpdate);
+        }
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.textContent = `Update bookmark date to ${dateUpdate.displayDate}`;
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: "updateBookmarkDate",
+                ids: dateUpdate.ids,
+                date: dateUpdate.date
+            });
+            if (response.status === "success") {
+                statusDiv.textContent = "Bookmark date updated.";
+                actionDiv.replaceChildren();
+            } else if (response.status === "unchanged") {
+                statusDiv.textContent = "Bookmark date is already current.";
+                actionDiv.replaceChildren();
+            } else {
+                statusDiv.textContent = response.message || "Unable to update bookmark date.";
+                button.disabled = false;
+            }
+        } catch (error) {
+            statusDiv.textContent = error instanceof Error ? error.message : String(error);
+            button.disabled = false;
+        }
+    });
+    actionDiv.appendChild(button);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const statusDiv = document.getElementById("status");
     const choicesDiv = document.getElementById("choices");
@@ -13,29 +62,42 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (response.status === "not_found") {
             statusDiv.textContent = `No existing bookmark found for "${response.storyName}".`;
         } else if (response.status === "updated") {
-            statusDiv.textContent = `Successfully updated: "${response.bookmark.title}"!`;
+            statusDiv.textContent = response.alreadyCurrent
+                ? `Bookmark is already up to date: "${response.bookmark.title}".`
+                : `Successfully updated: "${response.bookmark.title}"!`;
+            showDateUpdate(response.dateUpdate, response.publicationDate, response.publicationDateError, statusDiv);
         } else if (response.status === "multiple") {
             statusDiv.textContent = "Multiple matching bookmarks found. Please select which one to update:";
             
             response.matches.forEach(match => {
                 const item = document.createElement("div");
                 item.className = "bookmark-item";
-                item.innerHTML = `
-                    <div class="b-title">${match.title}</div>
-                    <div class="b-url">${match.url}</div>
-                `;
-                item.addEventListener("click", () => {
-                    chrome.runtime.sendMessage({
-                        action: "updateSpecificBookmark",
-                        id: match.id,
-                        url: response.currentUrl,
-                        title: response.currentTitle
-                    }, (res) => {
-                        if (res && res.status === "success") {
+                const title = document.createElement("div");
+                title.className = "b-title";
+                title.textContent = match.title;
+                const url = document.createElement("div");
+                url.className = "b-url";
+                url.textContent = match.url;
+                item.append(title, url);
+                item.addEventListener("click", async () => {
+                    try {
+                        const result = await chrome.runtime.sendMessage({
+                            action: "updateSpecificBookmark",
+                            ids: match.ids,
+                            url: response.currentUrl,
+                            publicationDate: response.publicationDate,
+                            publicationDateError: response.publicationDateError
+                        });
+                        if (result.status === "success") {
                             statusDiv.textContent = "Bookmark updated successfully!";
-                            choicesDiv.innerHTML = "";
+                            choicesDiv.replaceChildren();
+                            showDateUpdate(result.dateUpdate, result.publicationDate, result.publicationDateError, statusDiv);
+                        } else {
+                            statusDiv.textContent = result.message || "Unable to update bookmark.";
                         }
-                    });
+                    } catch (error) {
+                        statusDiv.textContent = error instanceof Error ? error.message : String(error);
+                    }
                 });
                 choicesDiv.appendChild(item);
             });
