@@ -4,6 +4,7 @@ A browser extension designed for web novel and fiction readers. It automatically
 
 ## Features
 - **URL-Based Matching:** Recognizes story paths (e.g., Royal Road, Scribble Hub) so it finds your bookmark no matter what chapter you are on.
+- **Comics Folder Fallback:** If story-path matching finds nothing, matches a bookmark in a folder named `Comics` when it is the only distinct bookmark URL for the active domain.
 - **Custom Title Preservation:** Leaves your custom names completely untouched.
 - **Tracker Stripping:** Automatically cleans tracking parameters out of URLs before saving.
 - **Smart Deduplication:** Updates duplicate bookmark instances silently across multiple folders.

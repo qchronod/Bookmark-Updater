@@ -50,10 +50,29 @@
         }
     }
 
+    function getBookmarkDomain(urlStr) {
+        try {
+            return new URL(urlStr).hostname.replace(/^www\./, "");
+        } catch (error) {
+            return null;
+        }
+    }
+
     function flattenBookmarks(nodes, out = []) {
         for (const node of nodes) {
             if (node.url) out.push(node);
             if (node.children) flattenBookmarks(node.children, out);
+        }
+        return out;
+    }
+
+    function flattenBookmarksInFolder(nodes, folderName, out = [], insideFolder = false) {
+        for (const node of nodes) {
+            const isFolder = !node.url && node.title === folderName;
+            if (node.url && insideFolder) out.push(node);
+            if (node.children) {
+                flattenBookmarksInFolder(node.children, folderName, out, insideFolder || isFolder);
+            }
         }
         return out;
     }
@@ -129,7 +148,9 @@
     globalThis.BookmarkUpdaterUtils = {
         cleanUrl,
         flattenBookmarks,
+        flattenBookmarksInFolder,
         getDateUpdate,
+        getBookmarkDomain,
         getSiteAdapter,
         getStoryKey,
         getUpdatedTitle

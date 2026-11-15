@@ -83,9 +83,15 @@
         }
 
         const bookmarkTreeNodes = await getBookmarkTree();
-        const matches = utils.flattenBookmarks(bookmarkTreeNodes).filter(bookmark =>
+        let matches = utils.flattenBookmarks(bookmarkTreeNodes).filter(bookmark =>
             utils.getStoryKey(bookmark.url) === currentStoryKey
         );
+        if (matches.length === 0) {
+            const currentDomain = utils.getBookmarkDomain(currentUrl);
+            matches = utils.flattenBookmarksInFolder(bookmarkTreeNodes, "Comics").filter(bookmark =>
+                utils.getBookmarkDomain(bookmark.url) === currentDomain
+            );
+        }
         const currentUrlMatches = matches.filter(bookmark => bookmark.url === currentUrl);
         const updateMatches = matches.filter(bookmark => bookmark.url !== currentUrl);
         const bookmarksByUrl = new Map();
