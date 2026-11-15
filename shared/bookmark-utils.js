@@ -78,12 +78,12 @@
     }
 
     function parseTitleDate(title) {
-        const match = title.match(/^\s*((?:[^\p{L}\p{N}\s]\s*){0,2})(?:(\d{4})-(\d{2})-(\d{2})|(\d{4})\/(\d{2})\/(\d{2})|(\d{2})\/(\d{2})\/(\d{2}))(?=\s|$)/u);
+        const match = title.match(/^\s*((?:[^\p{L}\p{N}\s]\s*){0,2})(?:(\d{4})-(\d{2})-(\d{2})|(\d{4})\/(\d{2})\/(\d{2})|(\d{2})\/(\d{2})\/(\d{2})|(\d{2})\/(\d{2})\/(\d{4}))(?=\s|$)/u);
         if (!match) return null;
 
-        const year = Number(match[2] || match[5] || `20${match[10]}`);
-        const month = Number(match[3] || match[6] || match[9]);
-        const day = Number(match[4] || match[7] || match[8]);
+        const year = Number(match[2] || match[5] || match[13] || `20${match[10]}`);
+        const month = Number(match[3] || match[6] || match[9] || match[12]);
+        const day = Number(match[4] || match[7] || match[8] || match[11]);
         const date = new Date(Date.UTC(year, month - 1, day));
         if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
             return null;
@@ -92,9 +92,8 @@
             year,
             month,
             day,
-            format: match[2] ? "iso" : match[5] ? "year-first-slash" : "short",
             dateStart: title.match(/^\s*/)[0].length + match[1].length,
-            dateLength: match[2] || match[5] ? 10 : 8
+            dateLength: match[2] || match[5] || match[11] ? 10 : 8
         };
     }
 
@@ -111,24 +110,18 @@
         }
 
         const existing = parseTitleDate(title);
-        if (!existing && /^\s*(?:[^\p{L}\p{N}\s]\s*){0,2}(?:\d{4}-\d{2}-\d{2}|\d{4}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{2})(?=\s|$)/u.test(title)) {
+        if (!existing && /^\s*(?:[^\p{L}\p{N}\s]\s*){0,2}(?:\d{4}-\d{2}-\d{2}|\d{4}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{4})(?=\s|$)/u.test(title)) {
             return null;
         }
         if (existing && Date.UTC(year, month - 1, day) <= Date.UTC(existing.year, existing.month - 1, existing.day)) {
             return null;
         }
 
-        const shortDate = `${dateMatch[3]}/${dateMatch[2]}/${String(year % 100).padStart(2, "0")}`;
+        const newDate = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
         if (existing) {
             const rest = title.slice(existing.dateStart + existing.dateLength);
-            const existingFormat = existing.format === "iso"
-                ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
-                : existing.format === "year-first-slash"
-                    ? `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`
-                    : shortDate;
-            return { title: `${title.slice(0, existing.dateStart)}${existingFormat}${rest}`, displayDate: existingFormat };
+            return { title: `${title.slice(0, existing.dateStart)}${newDate}${rest}`, displayDate: newDate };
         }
-        const newDate = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
         return { title: `${newDate}${title ? ` - ${title}` : ""}`, displayDate: newDate };
     }
 

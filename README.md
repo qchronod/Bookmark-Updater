@@ -26,7 +26,7 @@ A browser extension designed for web novel and fiction readers. It automatically
 
 The Firefox add-on loaded this way is temporary and must be loaded again after Firefox restarts. For permanent distribution, the add-on must be signed by Mozilla.
 
-On supported sites, the extension offers a separate button to update a bookmark's leading date when the page's publication date is newer. It reads dates from Royal Road, Scribble Hub, Wattpad, WebNovel, and XenForo forum posts with a post anchor. It preserves an existing `DD/MM/YY`, `YYYY-MM-DD`, or `YYYY/MM/DD` date style and up to two punctuation or symbol characters before the date; if the title has no leading date, it offers to add one as `YYYY/MM/DD - Title` for chronological sorting. The bookmark date is never changed automatically.
+On supported sites, the extension offers a separate button to update a bookmark's leading date when the page's publication date is newer. It reads dates from Royal Road, Scribble Hub, Wattpad, WebNovel, and XenForo forum posts with a post anchor. It normalizes an existing leading `DD/MM/YY`, `DD/MM/YYYY`, `YYYY-MM-DD`, or `YYYY/MM/DD` date to `YYYY/MM/DD` and preserves up to two punctuation or symbol characters before it; if the title has no leading date, it offers to add one as `YYYY/MM/DD - Title` for chronological sorting. The bookmark date is never changed automatically.
 
 ## Contributing
 
