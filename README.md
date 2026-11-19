@@ -31,3 +31,5 @@ On supported sites, the extension offers a separate button to update a bookmark'
 ## Contributing
 
 Shared bookmark logic and individual site adapters live in `shared/`. Add or update a site adapter under `shared/site-adapters/`, then run `.\sync-shared.ps1` from the repository root. The script bundles the adapters and syncs shared code into both browser builds.
+
+Bump the version in both browser manifests when making a bug fix or adding a feature. For substantial iterative changes, call out when multiple version bumps may be appropriate. The script bundles the adapters and syncs shared code into both browser builds.
