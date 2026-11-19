@@ -77,24 +77,42 @@
         return out;
     }
 
-    function parseTitleDate(title) {
+    function parseTitleDate(title, publicationDate) {
         const match = title.match(/^\s*((?:[^\p{L}\p{N}\s]\s*){0,2})(?:(\d{4})-(\d{2})-(\d{2})|(\d{4})\/(\d{2})\/(\d{2})|(\d{2})\/(\d{2})\/(\d{2})|(\d{2})\/(\d{2})\/(\d{4}))(?=\s|$)/u);
         if (!match) return null;
 
-        const year = Number(match[2] || match[5] || match[13] || `20${match[10]}`);
-        const month = Number(match[3] || match[6] || match[9] || match[12]);
-        const day = Number(match[4] || match[7] || match[8] || match[11]);
-        const date = new Date(Date.UTC(year, month - 1, day));
-        if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
-            return null;
+        function createDate(year, month, day) {
+            const date = new Date(Date.UTC(year, month - 1, day));
+            if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+                return null;
+            }
+            return {
+                year,
+                month,
+                day,
+                dateStart: title.match(/^\s*/)[0].length + match[1].length,
+                dateLength: match[2] || match[5] || match[11] ? 10 : 8
+            };
         }
-        return {
-            year,
-            month,
-            day,
-            dateStart: title.match(/^\s*/)[0].length + match[1].length,
-            dateLength: match[2] || match[5] || match[11] ? 10 : 8
-        };
+
+        const existing = createDate(
+            Number(match[2] || match[5] || match[13] || `20${match[10]}`),
+            Number(match[3] || match[6] || match[9] || match[12]),
+            Number(match[4] || match[7] || match[8] || match[11])
+        );
+        if (!match[8]) return existing;
+
+        const yearFirst = createDate(Number(`20${match[8]}`), Number(match[9]), Number(match[10]));
+        if (!existing) return yearFirst;
+        if (
+            yearFirst &&
+            publicationDate &&
+            `${existing.year}-${String(existing.month).padStart(2, "0")}-${String(existing.day).padStart(2, "0")}` >= publicationDate &&
+            `${yearFirst.year}-${String(yearFirst.month).padStart(2, "0")}-${String(yearFirst.day).padStart(2, "0")}` < publicationDate
+        ) {
+            return yearFirst;
+        }
+        return existing;
     }
 
     function getUpdatedTitle(title, publicationDate) {
@@ -109,7 +127,17 @@
             return null;
         }
 
-        const existing = parseTitleDate(title);
+        const today = new Date();
+        const oldestYear = today.getFullYear() - 20;
+        const oldestDay = Math.min(today.getDate(), new Date(oldestYear, today.getMonth() + 1, 0).getDate());
+        const oldestDate = Date.UTC(oldestYear, today.getMonth(), oldestDay);
+        const todayDate = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        const publicationTimestamp = Date.UTC(year, month - 1, day);
+        if (publicationTimestamp <= oldestDate || publicationTimestamp > todayDate) {
+            return null;
+        }
+
+        const existing = parseTitleDate(title, publicationDate);
         if (!existing && /^\s*(?:[^\p{L}\p{N}\s]\s*){0,2}(?:\d{4}-\d{2}-\d{2}|\d{4}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{2}|\d{2}\/\d{2}\/\d{4})(?=\s|$)/u.test(title)) {
             return null;
         }
